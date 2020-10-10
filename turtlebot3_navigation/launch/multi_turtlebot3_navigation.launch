@@ -1,0 +1,192 @@
+<launch>
+    <!-- Arguments -->
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="first_tb3"  default="tb3_0"/>
+  <arg name="second_tb3" default="tb3_1"/>
+  <arg name="third_tb3"  default="tb3_2"/>
+
+  <!-- Robot initial poses -->
+  <arg name="first_tb3_x_pos" default="-7.0"/>
+  <arg name="first_tb3_y_pos" default="-1.0"/>
+  <arg name="first_tb3_z_pos" default=" 0.0"/>
+  <arg name="first_tb3_yaw"   default=" 1.57"/>
+
+  <arg name="second_tb3_x_pos" default=" 6.0"/>
+  <arg name="second_tb3_y_pos" default="-1.0"/>
+  <arg name="second_tb3_z_pos" default=" 0.0"/>
+  <arg name="second_tb3_yaw"   default=" 1.57"/>
+
+  <arg name="third_tb3_x_pos" default=" 0.5"/>
+  <arg name="third_tb3_y_pos" default=" 3.0"/>
+  <arg name="third_tb3_z_pos" default=" 0.0"/>
+  <arg name="third_tb3_yaw"   default=" 0.0"/>
+
+  <arg name="map_file" default="$(find turtlebot3_navigation)/maps/house_map/map.yaml"/>
+  <arg name="open_rviz" default="true"/>
+  <arg name="move_forward_only" default="false"/>
+
+  <!-- Staic TF publisher between /map and $(arg first_tb3)/map -->
+  <node pkg="tf" type="static_transform_publisher" name="map_link_tb0" args="-$(arg first_tb3_x_pos) -$(arg first_tb3_y_pos) 0 0 0 0 /map $(arg first_tb3)/map 50"/>
+
+  <!-- Staic TF publisher between /map and $(arg second_tb3)/map -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="map_link_tb1" args="-$(arg second_tb3_x_pos) -$(arg second_tb3_y_pos) 0 0 0 0 /map $(arg second_tb3)/map 50"/> --> 
+
+  <!-- Staic TF publisher between /map and $(arg third_tb3)/map -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="map_link_tb3" args="-$(arg third_tb3_x_pos) -$(arg third_tb3_y_pos) 0 0 0 0 /map $(arg third_tb3)/map 50"/> -->
+
+  <group ns = "$(arg first_tb3)">
+    <!-- Turtlebot3 -->
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+      <arg name="model" value="$(arg model)" />
+      <arg name="multi_robot_name" value="$(arg first_tb3)"/>
+    </include>
+
+    <remap from="map" to="map"/>
+
+    <!-- Map server -->
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+    <!-- AMCL -->
+    <include file="$(find turtlebot3_navigation)/launch/amcl.launch">
+      <arg name="initial_pose_x" default="$(arg first_tb3_x_pos)"/>
+      <arg name="initial_pose_y" default="$(arg first_tb3_y_pos)"/>
+      <arg name="initial_pose_a" default="$(arg first_tb3_yaw)"/>
+      <arg name="localization_ns" value="$(arg first_tb3)"/>
+    </include>
+
+    <!-- move_base -->
+    <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+      <arg name="model" value="$(arg model)" />
+      <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+      <arg name="move_base_ns" value="$(arg first_tb3)"/>
+    </include>
+
+    <!-- Move Base specific changes-->
+
+    <rosparam param="/$(arg first_tb3)/move_base/global_costmap/scan/sensor_frame"> /tb3_0/base_scan </rosparam>
+    <rosparam param="/$(arg first_tb3)/move_base/global_costmap/scan/topic"> /tb3_0/scan </rosparam>
+    <rosparam param="/$(arg first_tb3)/move_base/global_costmap/global_frame"> /tb3_0/map </rosparam>
+    <rosparam param="/$(arg first_tb3)/move_base/global_costmap/robot_base_frame"> /tb3_0/base_footprint </rosparam>
+
+    <rosparam param="/$(arg first_tb3)/move_base/local_costmap/scan/sensor_frame"> /tb3_0/base_scan" </rosparam>
+    <rosparam param="/$(arg first_tb3)/move_base/local_costmap/scan/topic"> /tb3_0/scan </rosparam>
+    <rosparam param="/$(arg first_tb3)/move_base/local_costmap/global_frame"> /tb3_0/odom </rosparam>
+    <rosparam param="/$(arg first_tb3)/move_base/local_costmap/robot_base_frame"> /tb3_0/base_footprint </rosparam>
+
+    <rosparam param="/$(arg first_tb3)/move_base/TebLocalPlannerROS/odom_topic"> /tb3_0/odom </rosparam>
+    <rosparam param="/$(arg first_tb3)/move_base/TebLocalPlannerROS/map_frame"> /tb3_0/map </rosparam>
+
+    <remap from="/move_base_simple/goal" to="/tb3_0/move_base_simple/goal"/>
+
+    <!-- rviz -->
+    <group if="$(arg open_rviz)"> 
+      <node pkg="rviz" type="rviz" name="rviz" required="true"
+            args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation_tb0.rviz"/>
+    </group>
+
+  </group>
+
+  <group ns = "$(arg second_tb3)">
+    <!-- Turtlebot3 -->
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+      <arg name="model" value="$(arg model)" />
+      <arg name="multi_robot_name" value="$(arg second_tb3)"/>
+    </include>
+
+    <remap from="map" to="map"/>
+
+    <!-- Map server -->
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+    <!-- AMCL -->
+    <include file="$(find turtlebot3_navigation)/launch/amcl.launch">
+      <arg name="initial_pose_x" default="$(arg second_tb3_x_pos)"/>
+      <arg name="initial_pose_y" default="$(arg second_tb3_y_pos)"/>
+      <arg name="initial_pose_a" default="$(arg second_tb3_yaw)"/>
+      <arg name="localization_ns" value="$(arg second_tb3)"/>
+    </include>
+
+    <!-- move_base -->
+    <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+      <arg name="model" value="$(arg model)" />
+      <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+      <arg name="move_base_ns" value="$(arg second_tb3)"/>
+    </include>
+
+    <!-- Move Base specific changes-->
+
+    <rosparam param="/$(arg second_tb3)/move_base/global_costmap/scan/sensor_frame"> /tb3_1/base_scan </rosparam>
+    <rosparam param="/$(arg second_tb3)/move_base/global_costmap/scan/topic"> /tb3_1/scan </rosparam>
+    <rosparam param="/$(arg second_tb3)/move_base/global_costmap/global_frame"> /tb3_1/map </rosparam>
+    <rosparam param="/$(arg second_tb3)/move_base/global_costmap/robot_base_frame"> /tb3_1/base_footprint </rosparam>
+
+    <rosparam param="/$(arg second_tb3)/move_base/local_costmap/scan/sensor_frame"> /tb3_1/base_scan" </rosparam>
+    <rosparam param="/$(arg second_tb3)/move_base/local_costmap/scan/topic"> /tb3_1/scan </rosparam>
+    <rosparam param="/$(arg second_tb3)/move_base/local_costmap/global_frame"> /tb3_1/odom </rosparam>
+    <rosparam param="/$(arg second_tb3)/move_base/local_costmap/robot_base_frame"> /tb3_1/base_footprint </rosparam>
+
+    <rosparam param="/$(arg second_tb3)/move_base/TebLocalPlannerROS/odom_topic"> /tb3_1/odom </rosparam>
+    <rosparam param="/$(arg second_tb3)/move_base/TebLocalPlannerROS/map_frame"> /tb3_1/map </rosparam>
+
+    <remap from="/move_base_simple/goal" to="/tb3_1/move_base_simple/goal"/>
+
+    <!-- rviz -->
+    <group if="$(arg open_rviz)"> 
+      <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation_tb1.rviz"/>
+    </group>
+
+  </group>
+
+
+  <group ns = "$(arg third_tb3)">
+    <!-- Turtlebot3 -->
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+      <arg name="model" value="$(arg model)" />
+      <arg name="multi_robot_name" value="$(arg third_tb3)"/>
+    </include>
+
+    <remap from="map" to="map"/>
+
+    <!-- Map server -->
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+    <!-- AMCL -->
+    <include file="$(find turtlebot3_navigation)/launch/amcl.launch">
+      <arg name="initial_pose_x" default="$(arg third_tb3_x_pos)"/>
+      <arg name="initial_pose_y" default="$(arg third_tb3_y_pos)"/>
+      <arg name="initial_pose_a" default="$(arg third_tb3_yaw)"/>
+      <arg name="localization_ns" value="$(arg third_tb3)"/>
+    </include>
+
+    <!-- move_base -->
+    <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+      <arg name="model" value="$(arg model)" />
+      <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+      <arg name="move_base_ns" value="$(arg third_tb3)"/>
+    </include>
+
+    <!-- Move Base specific changes-->
+
+    <rosparam param="/$(arg third_tb3)/move_base/global_costmap/scan/sensor_frame"> /tb3_2/base_scan </rosparam>
+    <rosparam param="/$(arg third_tb3)/move_base/global_costmap/scan/topic"> /tb3_2/scan </rosparam>
+    <rosparam param="/$(arg third_tb3)/move_base/global_costmap/global_frame"> /tb3_2/map </rosparam>
+    <rosparam param="/$(arg third_tb3)/move_base/global_costmap/robot_base_frame"> /tb3_2/base_footprint </rosparam>
+
+    <rosparam param="/$(arg third_tb3)/move_base/local_costmap/scan/sensor_frame"> /tb3_2/base_scan" </rosparam>
+    <rosparam param="/$(arg third_tb3)/move_base/local_costmap/scan/topic"> /tb3_2/scan </rosparam>
+    <rosparam param="/$(arg third_tb3)/move_base/local_costmap/global_frame"> /tb3_2/odom </rosparam>
+    <rosparam param="/$(arg third_tb3)/move_base/local_costmap/robot_base_frame"> /tb3_2/base_footprint </rosparam>
+
+    <rosparam param="/$(arg third_tb3)/move_base/TebLocalPlannerROS/odom_topic"> /tb3_2/odom </rosparam>
+    <rosparam param="/$(arg third_tb3)/move_base/TebLocalPlannerROS/map_frame"> /tb3_2/map </rosparam>
+
+    <remap from="/move_base_simple/goal" to="/tb3_2/move_base_simple/goal"/>
+
+    <!-- rviz -->
+    <group if="$(arg open_rviz)"> 
+      <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation_tb2.rviz"/>
+    </group>
+
+  </group>
+
+</launch>
